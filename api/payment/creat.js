@@ -19,16 +19,6 @@ const PRODUCTS = {
     name: "Genmini Pro + 5TB Google One",
     amount: 48888,
     prefix: "gemini5tb"
-  },
-  geminipro5tb: {
-    name: "Genmini Pro + 5TB Google One",
-    amount: 48888,
-    prefix: "gemini5tb"
-  },
-  gemini_pro_5tb: {
-    name: "Genmini Pro + 5TB Google One",
-    amount: 48888,
-    prefix: "gemini5tb"
   }
 };
 
