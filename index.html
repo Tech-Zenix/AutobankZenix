@@ -8,8 +8,7 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#fff8f0;min-height:100vh}
 .top-bar{display:flex;align-items:center;justify-content:center;padding:14px 16px;background:#fff;border-bottom:1px solid #eee;position:relative}
-.back-btn{position:absolute;left:16px;font-size:22px;color:#333;text-decoration:none}
-.logo{width:36px;height:36px;border-radius:50%;object-fit:cover}
+.back-btn{position:absolute;left:16px;font-size:22px;color:#333;text-decoration:none;cursor:pointer}
 .notice{background:linear-gradient(90deg,#f5a623,#f7c05a);border-radius:12px;margin:16px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
 .notice-text{color:#fff;font-size:14px;font-weight:600;line-height:1.4;flex:1}
 .timer{color:#c0392b;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;margin-left:12px}
@@ -19,35 +18,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#fff8f0;
 .qr-card img{width:200px;height:200px;border-radius:8px}
 .qr-loading{width:200px;height:200px;display:flex;align-items:center;justify-content:center;background:#f9f9f9;border-radius:8px;color:#888;font-size:13px;text-align:center;padding:16px}
 .amount-label{color:#e74c3c;font-size:22px;font-weight:800;margin-top:14px}
-.payment-status{
-  display:flex;
-  align-items:center;
-  gap:7px;
-  margin-top:12px;
-  padding:8px 14px;
-  background:#fff7e6;
-  border:1px solid #f5d28a;
-  border-radius:20px;
-  color:#b77900;
-  font-size:14px;
-  font-weight:700;
-}
-
-.status-dot{
-  font-size:16px;
-  animation:pulse 1.2s infinite;
-}
-
-@keyframes pulse{
-  0%,100%{opacity:1}
-  50%{opacity:.35}
-}
+.payment-status{display:flex;align-items:center;gap:7px;margin-top:12px;padding:8px 14px;background:#fff7e6;border:1px solid #f5d28a;border-radius:20px;color:#b77900;font-size:14px;font-weight:700}
+.payment-status.paid{background:#eafaf0;border-color:#9cddb4;color:#16803c}
+.payment-status.expired{background:#fff0f0;border-color:#efb0b0;color:#c0392b}
+.status-dot{font-size:16px;animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .info-list{margin:0 16px 16px;display:flex;flex-direction:column;gap:10px}
 .info-item{background:#fff;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
 .info-icon{font-size:20px;width:28px;text-align:center}
 .info-content{flex:1}
 .info-label-sm{font-size:11px;color:#aaa;margin-bottom:2px}
-.info-value{font-size:15px;font-weight:700;color:#222}
+.info-value{font-size:15px;font-weight:700;color:#222;word-break:break-word}
 .info-value.red{color:#e74c3c}
 .info-value.orange{color:#e67e22}
 .copy-btn{background:#f5a623;color:#fff;border:none;border-radius:20px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
@@ -61,44 +42,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#fff8f0;
 .expired-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:998;align-items:center;justify-content:center}
 .expired-box{background:#fff;border-radius:16px;padding:32px 24px;text-align:center;margin:24px}
 .expired-box h2{color:#e74c3c;font-size:20px;margin-bottom:8px}
-.expired-box p{color:#666;font-size:14px}
-.contact-cskh{
-  position:fixed;
-  right:16px;
-  bottom:16px;
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-
-  width:auto;
-  margin:0;
-  padding:10px 14px;
-
-  background:#df001b;
-  color:#fff;
-  text-decoration:none;
-  border-radius:999px;
-
-  font-size:14px;
-  font-weight:700;
-
-  box-shadow:0 3px 10px rgba(0,0,0,.18);
-  z-index:9999;
-
-  transition:transform .15s, opacity .15s;
-}
-
-.contact-cskh:active{
-  transform:scale(.95);
-  opacity:.9;
-}
-
-.headset{
-  font-size:18px;
-  line-height:1;
-}
+.expired-box p{color:#666;font-size:14px;line-height:1.6}
+.success-box{display:none;background:#fff;border-radius:12px;margin:0 16px 24px;padding:18px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.success-box.show{display:block}
+.success-box h2{color:#16803c;font-size:18px;margin-bottom:8px}
+.success-box p{color:#555;font-size:13px;line-height:1.6}
+.tut-btn{display:inline-block;margin-top:12px;background:#16803c;color:#fff;text-decoration:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:800}
+.error-box{display:none;background:#fff;border-radius:12px;margin:16px;padding:18px;text-align:center;color:#c0392b;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.error-box.show{display:block}
+.contact-cskh{position:fixed;right:16px;bottom:16px;display:flex;align-items:center;justify-content:center;gap:6px;width:auto;margin:0;padding:10px 14px;background:#df001b;color:#fff;text-decoration:none;border-radius:999px;font-size:14px;font-weight:700;box-shadow:0 3px 10px rgba(0,0,0,.18);z-index:9999;transition:transform .15s,opacity .15s}
+.contact-cskh:active{transform:scale(.95);opacity:.9}
+.headset{font-size:18px;line-height:1}
 </style>
 </head>
 <body>
@@ -113,54 +67,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#fff8f0;
 </div>
 
 <div class="qr-card">
-  <div class="qr-loading" id="qrLoading">Đang tạo mã QR...</div>
+  <div class="qr-loading" id="qrLoading">Đang tải thông tin đơn hàng...</div>
   <img id="qrImg" style="display:none" alt="QR">
-  <div class="amount-label" id="amountDisplay">0 VND</div>
+  <div class="amount-label" id="amountDisplay">—</div>
   <div class="payment-status" id="paymentStatus">
-   <span class="status-dot">●</span>
-   <span>Đang chờ thanh toán</span>
-</div>
+    <span class="status-dot">●</span>
+    <span>Đang chờ thanh toán</span>
+  </div>
 </div>
 
 <div class="info-list">
-  <div class="info-item">
-    <div class="info-icon">🏦</div>
-    <div class="info-content">
-      <div class="info-label-sm">Ngân hàng</div>
-      <div class="info-value">NGÂN HÀNG QUÂN ĐỘI MB</div>
-    </div>
-  </div>
-  <div class="info-item">
-    <div class="info-icon">💳</div>
-    <div class="info-content">
-      <div class="info-label-sm">Số tài khoản</div>
-      <div class="info-value">118122010</div>
-    </div>
-    <button class="copy-btn" onclick="copyText('118122010')">Copy</button>
-  </div>
-  <div class="info-item">
-    <div class="info-icon">👤</div>
-    <div class="info-content">
-      <div class="info-label-sm">Tên người nhận</div>
-      <div class="info-value">PHAN QUỐC DŨNG</div>
-    </div>
-  </div>
-  <div class="info-item">
-    <div class="info-icon">📄</div>
-    <div class="info-content">
-      <div class="info-label-sm">Số tiền đơn hàng</div>
-      <div class="info-value red" id="amountValue">0 VND</div>
-    </div>
-    <button class="copy-btn" onclick="copyText(document.getElementById('amountValue').innerText)">Copy</button>
-  </div>
-  <div class="info-item">
-    <div class="info-icon">✏️</div>
-    <div class="info-content">
-      <div class="info-label-sm">Mã đơn hàng</div>
-      <div class="info-value orange" id="txCode">---</div>
-    </div>
-    <button class="copy-btn" onclick="copyText(document.getElementById('txCode').innerText)">Copy</button>
-  </div>
+  <div class="info-item"><div class="info-icon">🏦</div><div class="info-content"><div class="info-label-sm">Ngân hàng</div><div class="info-value">NGÂN HÀNG QUÂN ĐỘI MB</div></div></div>
+  <div class="info-item"><div class="info-icon">💳</div><div class="info-content"><div class="info-label-sm">Số tài khoản</div><div class="info-value">118122010</div></div><button class="copy-btn" onclick="copyText('118122010')">Copy</button></div>
+  <div class="info-item"><div class="info-icon">👤</div><div class="info-content"><div class="info-label-sm">Tên người nhận</div><div class="info-value">PHAN QUỐC DŨNG</div></div></div>
+  <div class="info-item"><div class="info-icon">📄</div><div class="info-content"><div class="info-label-sm">Số tiền đơn hàng</div><div class="info-value red" id="amountValue">—</div></div><button class="copy-btn" onclick="copyElementText('amountValue')">Copy</button></div>
+  <div class="info-item"><div class="info-icon">✏️</div><div class="info-content"><div class="info-label-sm">Mã đơn hàng</div><div class="info-value orange" id="txCode">---</div></div><button class="copy-btn" onclick="copyElementText('txCode')">Copy</button></div>
+</div>
+
+<div class="success-box" id="successBox">
+  <h2>✅ Thanh toán thành công</h2>
+  <p>Hệ thống đã xác nhận giao dịch. Bạn có thể nhận sản phẩm bên dưới.</p>
+  <a id="tutBtn" class="tut-btn" href="#" target="_blank" rel="noopener noreferrer" style="display:none">Nhận sản phẩm / Tut</a>
 </div>
 
 <div class="note">
@@ -177,62 +104,160 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#fff8f0;
     <p>Giao dịch đã hết hạn.<br>Vui lòng thực hiện lại.</p>
   </div>
 </div>
+<div class="error-box" id="errorBox"></div>
+
+<a class="contact-cskh" href="https://www.facebook.com/phanquocdung1812" target="_blank" rel="noopener noreferrer">
+  <span class="headset">🎧</span> CSKH
+</a>
 
 <script>
-  // Lấy tham số từ URL
-  const params = new URLSearchParams(window.location.search);
-  const amount = params.get('amount') || '0';
-  const txCode = params.get('code') || '---';
-  const amountVND = parseInt(amount).toLocaleString('vi-VN') + ' VND';
+const params = new URLSearchParams(window.location.search);
+const paymentId = params.get('payment_id');
+const API_BASE = '/api/payment/';
+const BANK_ID = 'MB';
+const ACCOUNT_NO = '118122010';
+const ACCOUNT_NAME = 'PHAN QUỐC DŨNG';
 
-  // Hiển thị số tiền
-  document.getElementById('amountDisplay').innerText = amountVND;
-  document.getElementById('amountValue').innerText = amountVND;
-  document.getElementById('txCode').innerText = txCode;
+let expiresAtMs = null;
+let pollTimer = null;
+let countdownTimer = null;
+let currentStatus = null;
 
-  // Tạo QR bằng vietqr.io (dùng cùng thông tin)
-  const BANK_ID = 'MB';
-  const ACCOUNT_NO = '118122010';
-  const ACCOUNT_NAME = 'PHAN QUOC DUNG';
-  const qrUrl = `https://img.vietqr.io/image/${BANK_ID}-${ACCOUNT_NO}-compact2.png?amount=${amount}&addInfo=${txCode}&accountName=${encodeURIComponent(ACCOUNT_NAME)}`;
+function formatVND(value){
+  const n = Number(value);
+  return Number.isFinite(n) ? n.toLocaleString('vi-VN') + ' VND' : '—';
+}
 
-  const qrImg = document.getElementById('qrImg');
-  const qrLoading = document.getElementById('qrLoading');
-  qrImg.onload = function(){ qrLoading.style.display='none'; qrImg.style.display='block'; };
-  qrImg.onerror = function(){ qrLoading.innerText='Không tải được QR. Vui lòng thử lại.'; };
-  qrImg.src = qrUrl;
+function copyText(text){
+  const value = String(text || '');
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(value).then(showToast).catch(()=>fallbackCopy(value));
+  }else fallbackCopy(value);
+}
+function copyElementText(id){ copyText(document.getElementById(id)?.innerText || ''); }
+function fallbackCopy(text){
+  const ta=document.createElement('textarea');
+  ta.value=text;document.body.appendChild(ta);ta.select();
+  document.execCommand('copy');document.body.removeChild(ta);showToast();
+}
+function showToast(){
+  const el=document.getElementById('toast');
+  el.classList.add('show');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer=setTimeout(()=>el.classList.remove('show'),2000);
+}
+function showError(message){
+  const box=document.getElementById('errorBox');
+  box.textContent=message;
+  box.classList.add('show');
+}
+function setStatus(status){
+  currentStatus=status;
+  const el=document.getElementById('paymentStatus');
+  const dot=el.querySelector('.status-dot');
+  const text=el.querySelector('span:last-child');
+  el.classList.remove('paid','expired');
 
-  // Copy
-  function copyText(t){
-    if(navigator.clipboard){navigator.clipboard.writeText(t).then(showToast).catch(()=>fallbackCopy(t));}
-    else fallbackCopy(t);
+  if(status==='PAID'){
+    el.classList.add('paid');dot.textContent='✓';text.textContent='Đã thanh toán';
+  }else if(status==='EXPIRED'){
+    el.classList.add('expired');dot.textContent='!';text.textContent='Đơn hàng đã hết hạn';
+  }else{
+    dot.textContent='●';text.textContent='Đang chờ thanh toán';
   }
-  function fallbackCopy(t){
-    const ta=document.createElement('textarea');
-    ta.value=t;document.body.appendChild(ta);ta.select();
-    document.execCommand('copy');document.body.removeChild(ta);showToast();
+}
+function updateCountdown(){
+  if(!expiresAtMs || currentStatus!=='PENDING') return;
+  const remaining=Math.max(0,Math.ceil((expiresAtMs-Date.now())/1000));
+  const m=String(Math.floor(remaining/60)).padStart(2,'0');
+  const s=String(remaining%60).padStart(2,'0');
+  const timerEl=document.getElementById('timer');
+  timerEl.textContent=m+':'+s;
+  if(remaining<=60) timerEl.classList.add('urgent');
+  if(remaining<=0){
+    clearInterval(countdownTimer);
+    showExpired();
   }
-  function showToast(){
-    const el=document.getElementById('toast');
-    el.classList.add('show');
-    setTimeout(()=>el.classList.remove('show'),2000);
-  }
+}
+function showExpired(){
+  setStatus('EXPIRED');
+  stopPolling();
+  document.getElementById('expiredOverlay').style.display='flex';
+  document.getElementById('qrImg').style.opacity='0.3';
+}
+function showPaid(tutUrl){
+  setStatus('PAID');
+  stopPolling();
+  clearInterval(countdownTimer);
+  document.getElementById('successBox').classList.add('show');
+  const btn=document.getElementById('tutBtn');
+  if(tutUrl){btn.href=tutUrl;btn.style.display='inline-block';}
+  else btn.style.display='none';
+}
+function renderPayment(payment){
+  document.getElementById('amountDisplay').textContent=formatVND(payment.amount);
+  document.getElementById('amountValue').textContent=formatVND(payment.amount);
+  document.getElementById('txCode').textContent=payment.code || '---';
 
-  // Timer 15 phút
-  let secs = 15*60;
-  const timerEl = document.getElementById('timer');
-  const iv = setInterval(()=>{
-    secs--;
-    const m=String(Math.floor(secs/60)).padStart(2,'0');
-    const s=String(secs%60).padStart(2,'0');
-    timerEl.textContent=m+':'+s;
-    if(secs<=60) timerEl.classList.add('urgent');
-    if(secs<=0){
-      clearInterval(iv);
-      timerEl.textContent='00:00';
-      document.getElementById('expiredOverlay').style.display='flex';
-      qrImg.style.opacity='0.3';
+  if(payment.expires_at) expiresAtMs=new Date(payment.expires_at).getTime();
+
+  const qrUrl='https://img.vietqr.io/image/' +
+    encodeURIComponent(BANK_ID)+'-'+encodeURIComponent(ACCOUNT_NO)+'-compact2.png' +
+    '?amount='+encodeURIComponent(payment.amount) +
+    '&addInfo='+encodeURIComponent(payment.code || '') +
+    '&accountName='+encodeURIComponent(ACCOUNT_NAME);
+
+  const qrImg=document.getElementById('qrImg');
+  const qrLoading=document.getElementById('qrLoading');
+  qrImg.onload=()=>{qrLoading.style.display='none';qrImg.style.display='block';};
+  qrImg.onerror=()=>{qrLoading.textContent='Không tải được QR. Vui lòng thử lại.';};
+  qrImg.src=qrUrl;
+
+  if(payment.status==='PAID') showPaid(payment.tut_url);
+  else if(payment.status==='EXPIRED') showExpired();
+  else {setStatus('PENDING');updateCountdown();}
+}
+async function fetchPayment(){
+  if(!paymentId) throw new Error('Thiếu payment_id. Vui lòng tạo lại đơn thanh toán từ trang sản phẩm.');
+  const response=await fetch(API_BASE+encodeURIComponent(paymentId),{cache:'no-store'});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok || !data.success) throw new Error(data.error || 'Không tìm thấy đơn thanh toán.');
+  return data;
+}
+async function loadPayment(){
+  try{
+    const data=await fetchPayment();
+    renderPayment(data);
+    if(data.status==='PENDING') startPolling();
+  }catch(error){
+    console.error('LOAD PAYMENT ERROR:',error);
+    showError(error.message || 'Không thể tải đơn thanh toán.');
+    document.getElementById('qrLoading').textContent='Không thể tải thông tin đơn hàng.';
+  }
+}
+function startPolling(){
+  stopPolling();
+  pollTimer=setInterval(async()=>{
+    try{
+      const data=await fetchPayment();
+      renderPayment(data);
+      if(data.status!=='PENDING') stopPolling();
+    }catch(error){
+      console.error('POLL PAYMENT ERROR:',error);
     }
-  },1000);
+  },2500);
+}
+function stopPolling(){
+  if(pollTimer){clearInterval(pollTimer);pollTimer=null;}
+}
+
+if(paymentId) loadPayment();
+else{
+  showError('Thiếu payment_id. Vui lòng tạo lại đơn thanh toán từ trang sản phẩm.');
+  document.getElementById('qrLoading').textContent='Không có mã đơn hàng.';
+}
+countdownTimer=setInterval(updateCountdown,1000);
+window.addEventListener('beforeunload',stopPolling);
 </script>
-<div class="toast" id="toast">Đã sao chép!</div>
+</body>
+</html>
