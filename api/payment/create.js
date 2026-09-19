@@ -3,22 +3,7 @@ import { randomUUID, randomBytes } from "node:crypto";
 
 const sql = neon(process.env.DATABASE_URL);
 
-/*
-|--------------------------------------------------------------------------
-| DANH SÁCH SẢN PHẨM ZENIX LAB
-|--------------------------------------------------------------------------
-|
-| amount = số tiền backend yêu cầu khách chuyển khoản.
-|
-| QUAN TRỌNG:
-| Website không được tự gửi amount.
-| Backend tự lấy amount từ danh sách này.
-|
-*/
-
 const PRODUCTS = {
-
-  // 01
   locketgold15s: {
     name: "Locket Gold 15s",
     amount: 40000,
@@ -26,7 +11,6 @@ const PRODUCTS = {
     prefix: "locketgold15s"
   },
 
-  // 02
   canvapro: {
     name: "Canva Pro",
     amount: 40000,
@@ -34,7 +18,6 @@ const PRODUCTS = {
     prefix: "canvapro"
   },
 
-  // 03
   gemini5tb: {
     name: "Genimi Pro + 5TB Google One",
     amount: 48888,
@@ -42,7 +25,6 @@ const PRODUCTS = {
     prefix: "gemini5tb"
   },
 
-  // 04
   netflixuhd: {
     name: "Netflix UHD Chính chủ",
     amount: 35000,
@@ -50,7 +32,6 @@ const PRODUCTS = {
     prefix: "netflixuhd"
   },
 
-  // 05
   damefacebook: {
     name: "Dame tài khoản Facebook",
     amount: 150000,
@@ -58,7 +39,6 @@ const PRODUCTS = {
     prefix: "damefacebook"
   },
 
-  // 06
   dameinstagram: {
     name: "Dame tài khoản Instagram",
     amount: 75000,
@@ -66,7 +46,6 @@ const PRODUCTS = {
     prefix: "dameinstagram"
   },
 
-  // 07
   dametiktok: {
     name: "Dame tài khoản Tiktok",
     amount: 150000,
@@ -74,7 +53,6 @@ const PRODUCTS = {
     prefix: "dametiktok"
   },
 
-  // 08
   tutbaogiamgiashopee: {
     name: "Tut Bào Giảm giá Shopee",
     amount: 50000,
@@ -82,7 +60,6 @@ const PRODUCTS = {
     prefix: "tutshopee"
   },
 
-  // 09
   tutruaip: {
     name: "Tut Rửa I.P",
     amount: 35000,
@@ -90,7 +67,6 @@ const PRODUCTS = {
     prefix: "tutruaip"
   },
 
-  // 10
   tutmanguonblackmmo: {
     name: "Tut Mã Nguồn - Black MMO",
     amount: 2000000,
@@ -98,7 +74,6 @@ const PRODUCTS = {
     prefix: "tutmanguon"
   },
 
-  // 11
   tooldamefacebook: {
     name: "Tool Dame Facebook",
     amount: 100000,
@@ -106,233 +81,117 @@ const PRODUCTS = {
     prefix: "tooldamefb"
   },
 
-  // 12
   unlockfacebook282: {
     name: "Unlock acc Facebook 180 ngày",
     amount: 150000,
     package: "1 acc",
     prefix: "unlockfb282"
   }
-
 };
 
-
-/*
-|--------------------------------------------------------------------------
-| CORS
-|--------------------------------------------------------------------------
-*/
-
 function setCors(req, res) {
-
   const allowed = process.env.ALLOWED_ORIGINS || "*";
-
   const origin = req.headers.origin;
 
   if (allowed === "*") {
-
-    res.setHeader(
-      "Access-Control-Allow-Origin",
-      "*"
-    );
-
+    res.setHeader("Access-Control-Allow-Origin", "*");
   } else {
-
     const origins = allowed
       .split(",")
-      .map(x => x.trim())
+      .map((x) => x.trim())
       .filter(Boolean);
 
-    if (
-      origin &&
-      origins.includes(origin)
-    ) {
-
-      res.setHeader(
-        "Access-Control-Allow-Origin",
-        origin
-      );
-
+    if (origin && origins.includes(origin)) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
     }
-
   }
 
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "POST, OPTIONS"
-  );
-
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type"
-  );
-
-  res.setHeader(
-    "Access-Control-Max-Age",
-    "86400"
-  );
-
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Max-Age", "86400");
 }
 
+function generatePaymentCode() {
+  /*
+   * Format:
+   * ZNX + 10 ký tự
+   *
+   * Ví dụ:
+   * ZNXA81K29P7Q
+   *
+   * SePay nên được cấu hình Payment Code:
+   * Prefix: ZNX
+   * Suffix: 10 ký tự
+   */
 
-/*
-|--------------------------------------------------------------------------
-| TẠO MÃ THANH TOÁN
-|--------------------------------------------------------------------------
-*/
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-function generatePaymentCode(prefix) {
+  let random = "";
 
-  const random = randomBytes(4)
-    .toString("hex")
-    .toUpperCase()
-    .slice(0, 6);
+  const bytes = randomBytes(10);
 
-  return `${prefix}-${random}`;
+  for (let i = 0; i < 10; i++) {
+    random += chars[bytes[i] % chars.length];
+  }
 
+  return `ZNX${random}`;
 }
-
-
-/*
-|--------------------------------------------------------------------------
-| API CREATE PAYMENT
-|--------------------------------------------------------------------------
-*/
 
 export default async function handler(req, res) {
-
   setCors(req, res);
 
-
-  /*
-  |--------------------------------------------------------------------------
-  | OPTIONS
-  |--------------------------------------------------------------------------
-  */
-
   if (req.method === "OPTIONS") {
-
-    return res
-      .status(204)
-      .end();
-
+    return res.status(204).end();
   }
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | CHỈ CHO PHÉP POST
-  |--------------------------------------------------------------------------
-  */
 
   if (req.method !== "POST") {
-
-    return res
-      .status(405)
-      .json({
-        success: false,
-        error: "Method Not Allowed"
-      });
-
+    return res.status(405).json({
+      success: false,
+      error: "Method Not Allowed"
+    });
   }
 
-
   try {
-
-    /*
-    |--------------------------------------------------------------------------
-    | LẤY PRODUCT ID
-    |--------------------------------------------------------------------------
-    */
-
     const body = req.body || {};
 
-    const productId =
-      String(
-        body.product || ""
-      ).trim();
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | KIỂM TRA PRODUCT
-    |--------------------------------------------------------------------------
-    */
+    const productId = String(body.product || "").trim();
 
     if (!productId) {
-
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: "Thiếu mã sản phẩm."
-        });
-
+      return res.status(400).json({
+        success: false,
+        error: "Thiếu mã sản phẩm."
+      });
     }
 
-
-    const product =
-      PRODUCTS[productId];
-
+    const product = PRODUCTS[productId];
 
     if (!product) {
-
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: "Sản phẩm không tồn tại.",
-          product: productId
-        });
-
+      return res.status(400).json({
+        success: false,
+        error: "Sản phẩm không tồn tại.",
+        product: productId
+      });
     }
 
+    /*
+     * payment_id được tạo hoàn toàn ở backend.
+     */
+    const paymentId = randomUUID();
 
     /*
-    |--------------------------------------------------------------------------
-    | TẠO PAYMENT ID
-    |--------------------------------------------------------------------------
-    */
-
-    const paymentId =
-      randomUUID();
-
+     * code được tạo hoàn toàn ở backend.
+     */
+    const code = generatePaymentCode();
 
     /*
-    |--------------------------------------------------------------------------
-    | TẠO CODE CHUYỂN KHOẢN
-    |--------------------------------------------------------------------------
-    */
-
-    const code =
-      generatePaymentCode(
-        product.prefix
-      );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | HẠN THANH TOÁN 15 PHÚT
-    |--------------------------------------------------------------------------
-    */
-
-    const expiresAt =
-      new Date(
-        Date.now() +
-        15 * 60 * 1000
-      );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | LƯU DATABASE
-    |--------------------------------------------------------------------------
-    */
+     * Đơn có hiệu lực 15 phút.
+     */
+    const expiresAt = new Date(
+      Date.now() + 15 * 60 * 1000
+    );
 
     await sql`
-
       INSERT INTO payments (
-
         payment_id,
         product,
         amount,
@@ -341,11 +200,8 @@ export default async function handler(req, res) {
         expires_at,
         created_at,
         updated_at
-
       )
-
       VALUES (
-
         ${paymentId},
         ${productId},
         ${product.amount},
@@ -354,50 +210,28 @@ export default async function handler(req, res) {
         ${expiresAt},
         NOW(),
         NOW()
-
       )
-
     `;
 
+    return res.status(201).json({
+      success: true,
 
-    /*
-    |--------------------------------------------------------------------------
-    | TRẢ KẾT QUẢ
-    |--------------------------------------------------------------------------
-    */
+      payment_id: paymentId,
 
-    return res
-      .status(201)
-      .json({
+      product: productId,
 
-        success: true,
+      product_name: product.name,
 
-        payment_id:
-          paymentId,
+      amount: product.amount,
 
-        product:
-          productId,
+      package: product.package,
 
-        product_name:
-          product.name,
+      code,
 
-        amount:
-          product.amount,
+      status: "PENDING",
 
-        package:
-          product.package,
-
-        code:
-          code,
-
-        status:
-          "PENDING",
-
-        expires_at:
-          expiresAt.toISOString()
-
-      });
-
+      expires_at: expiresAt.toISOString()
+    });
 
   } catch (error) {
 
@@ -406,18 +240,9 @@ export default async function handler(req, res) {
       error
     );
 
-
-    return res
-      .status(500)
-      .json({
-
-        success: false,
-
-        error:
-          "Không thể tạo đơn thanh toán."
-
-      });
-
+    return res.status(500).json({
+      success: false,
+      error: "Không thể tạo đơn thanh toán."
+    });
   }
-
 }
