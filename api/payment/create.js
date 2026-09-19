@@ -86,6 +86,13 @@ const PRODUCTS = {
     amount: 150000,
     package: "1 acc",
     prefix: "unlockfb282"
+  },
+  
+  mokhoagioihanai: {
+    name: "Tut ChatGPT",
+    amount: 125000,
+    package: "1 tut",
+    prefix: "mokhoagioihanai"
   }
 };
 
