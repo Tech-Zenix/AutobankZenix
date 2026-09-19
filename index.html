@@ -178,11 +178,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
       </div>
 
       <p class="success-order-message">
-        Vui lòng truy cập vào link bên dưới để xem đơn hàng của bạn/liên hệ admin nhận sản phẩm
+        Vui lòng nhấn nút ở dưới để nhận sản phẩm qua link hoặc nhận sản phẩm qua Admin
       </p>
 
       <a id="tutBtn" class="tut-btn" href="#" target="_blank" rel="noopener noreferrer" style="display:none">
-        Xem đơn hàng
+        Nhận sản phẩm ngay !
       </a>
 
       <button class="success-close-btn" type="button" onclick="closeSuccessPopup()">
@@ -212,7 +212,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 <div class="error-box" id="errorBox"></div>
 
 <a class="contact-cskh" href="https://www.facebook.com/phanquocdung1812" target="_blank" rel="noopener noreferrer">
-  <span class="headset">🎧</span> CSKH
+  <span class="headset">🎧</span> Support
 </a>
 
 <script>
@@ -371,7 +371,19 @@ function showPaid(payment) {
   // Link giao sản phẩm theo mã sản phẩm.
   // Nếu backend đã trả tut_url thì ưu tiên link từ backend.
   const PRODUCT_ORDER_LINKS = {
-    tutbaogiamgiashopee: "https://vi.anotepad.com/notes/xyqpqwgi"
+    // Sản phẩm có link giao riêng
+    tutbaogiamgiashopee: "https://vi.anotepad.com/notes/xyqpqwgi",
+
+    // Các sản phẩm dưới đây: sau khi thanh toán thành công,
+    // nút "Xem đơn hàng" sẽ mở Facebook để khách nhận/hỗ trợ đơn hàng.
+    locketgold15s: "https://www.facebook.com/phanquocdung1812",
+    canvapro: "https://www.facebook.com/phanquocdung1812",
+    gemini5tb: "https://www.facebook.com/phanquocdung1812",
+    netflixuhd: "https://www.facebook.com/phanquocdung1812",
+    damefacebook: "https://www.facebook.com/phanquocdung1812",
+    dameinstagram: "https://www.facebook.com/phanquocdung1812",
+    dametiktok: "https://www.facebook.com/phanquocdung1812",
+    unlockfacebook282: "https://www.facebook.com/phanquocdung1812"
   };
 
   const orderLink =
