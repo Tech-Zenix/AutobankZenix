@@ -39,12 +39,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .note h3{font-size:14px;font-weight:900;margin-bottom:10px}
 .note p{font-size:13px;color:#555;line-height:1.7;margin-bottom:6px}
 .note strong{color:#f5a623}
-.success-box{display:none;background:#fff;border-radius:16px;margin:0 16px 24px;padding:24px;text-align:center;box-shadow:0 5px 25px rgba(22,128,60,.12);border:1px solid #bde8ca}
-.success-box.show{display:block;animation:successPop .25s ease-out}
-.success-icon{font-size:46px;margin-bottom:8px}
-.success-box h2{color:#16803c;font-size:21px;margin-bottom:8px}
-.success-box p{color:#555;font-size:13px;line-height:1.6}
-.tut-btn{display:inline-block;margin-top:14px;background:#16803c;color:#fff;text-decoration:none;border-radius:10px;padding:11px 20px;font-size:13px;font-weight:900}
+.success-overlay{display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.58);backdrop-filter:blur(5px);align-items:center;justify-content:center;padding:18px}
+.success-overlay.show{display:flex}
+.success-modal{position:relative;width:min(520px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:22px;box-shadow:0 25px 80px rgba(0,0,0,.28);border:1px solid #d9efdf;animation:successPop .28s ease-out}
+.success-top{height:6px;background:linear-gradient(90deg,#1a8d47,#43bd70)}
+.success-body{padding:30px 26px 26px;text-align:center}
+.success-icon{width:78px;height:78px;margin:0 auto 16px;border-radius:50%;display:grid;place-items:center;background:#eaf9ef;border:1px solid #bde8ca;font-size:42px}
+.success-modal h2{color:#16803c;font-size:28px;line-height:1.2;margin-bottom:10px;font-weight:900}
+.success-message{color:#555;font-size:15px;line-height:1.6;margin:0 auto 22px}
+.order-box{background:#f8fbf9;border:1px solid #e0eee4;border-radius:15px;padding:16px;text-align:left;margin-bottom:20px}
+.order-title{color:#16803c;font-size:16px;font-weight:900;margin-bottom:10px}
+.order-row{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:10px 0;border-bottom:1px solid #e7eee9;font-size:14px}
+.order-row:last-child{border-bottom:0;padding-bottom:0}
+.order-row span{color:#777;flex:0 0 auto}
+.order-row strong{color:#222;text-align:right;word-break:break-word}
+.success-order-message{color:#555;font-size:14px;line-height:1.65;margin:0 0 15px}
+.tut-btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;background:#16803c;color:#fff;text-decoration:none;border-radius:11px;padding:12px 18px;font-size:14px;font-weight:900;transition:.2s}
+.tut-btn:hover{background:#106b31;transform:translateY(-1px)}
+.success-close-btn{width:100%;min-height:44px;margin-top:10px;border:1px solid #ddd;background:#fff;color:#555;border-radius:11px;font-size:14px;font-weight:800;cursor:pointer}
+.success-close-btn:hover{background:#f7f7f7}
 .error-box{display:none;background:#fff;border-radius:12px;margin:16px;padding:18px;text-align:center;color:#c0392b;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .error-box.show{display:block}
 .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 24px;border-radius:24px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9999}
@@ -59,84 +72,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 @keyframes successPop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
 @media(max-width:480px){
   .qr-wrap,.qr-card img,.qr-loading{width:200px;height:200px}
+  .success-body{padding:26px 18px 20px}
+  .success-modal h2{font-size:24px}
+  .order-row{flex-direction:column;gap:4px}
+  .order-row strong{text-align:left}
 }
 </style>
 </head>
 <body>
-<!-- SUCCESS PAYMENT POPUP -->
-<div id="successOverlay" class="success-overlay">
-  <div class="success-modal">
 
-    <button
-      class="success-close"
-      onclick="closeSuccessPopup()"
-      aria-label="Đóng"
-    >
-      ×
-    </button>
-
-    <div class="success-icon">
-      🎉
-    </div>
-
-    <h2>Thanh toán thành công!</h2>
-
-    <p class="success-message">
-      Hệ thống đã nhận được khoản thanh toán của bạn.
-    </p>
-
-    <div class="order-box">
-
-      <div class="order-title">
-        Thông tin đơn hàng
-      </div>
-
-      <div class="order-row">
-        <span>Sản phẩm</span>
-        <strong id="successProduct">---</strong>
-      </div>
-
-      <div class="order-row">
-        <span>Gói</span>
-        <strong id="successPackage">---</strong>
-      </div>
-
-      <div class="order-row">
-        <span>Số tiền</span>
-        <strong id="successAmount">---</strong>
-      </div>
-
-      <div class="order-row">
-        <span>Mã đơn</span>
-        <strong id="successPaymentId">---</strong>
-      </div>
-
-    </div>
-
-    <p class="success-order-message">
-      Vui lòng truy cập vào link bên dưới để xem đơn hàng của bạn.
-    </p>
-
-    <a
-      id="successOrderLink"
-      class="success-order-button"
-      href="#"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      Xem đơn hàng
-    </a>
-
-    <button
-      class="success-home-button"
-      onclick="closeSuccessPopup()"
-    >
-      Đóng
-    </button>
-
-  </div>
-</div>
-  
 <div class="top-bar">
   <a class="back-btn" onclick="history.back()" aria-label="Quay lại">&#8249;</a>
 </div>
@@ -205,13 +149,47 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
   </div>
 </div>
 
-<div class="success-box" id="successBox">
-  <div class="success-icon">🎉</div>
-  <h2>Thanh toán thành công!</h2>
-  <p id="successText">Hệ thống đã nhận được khoản thanh toán của bạn.</p>
-  <a id="tutBtn" class="tut-btn" href="#" target="_blank" rel="noopener noreferrer" style="display:none">
-    Nhận sản phẩm
-  </a>
+<div class="success-overlay" id="successOverlay" onclick="closeSuccessPopup(event)">
+  <div class="success-modal" role="dialog" aria-modal="true" aria-labelledby="successTitle" onclick="event.stopPropagation()">
+    <div class="success-top"></div>
+    <div class="success-body">
+      <div class="success-icon" aria-hidden="true">🎉</div>
+      <h2 id="successTitle">Thanh toán thành công!</h2>
+      <p class="success-message">Hệ thống đã nhận được khoản thanh toán của bạn.</p>
+
+      <div class="order-box">
+        <div class="order-title">Thông tin đơn hàng</div>
+        <div class="order-row">
+          <span>Sản phẩm</span>
+          <strong id="successProduct">—</strong>
+        </div>
+        <div class="order-row">
+          <span>Gói dịch vụ</span>
+          <strong id="successPackage">—</strong>
+        </div>
+        <div class="order-row">
+          <span>Số tiền</span>
+          <strong id="successAmount">—</strong>
+        </div>
+        <div class="order-row">
+          <span>Mã đơn hàng</span>
+          <strong id="successPaymentId">—</strong>
+        </div>
+      </div>
+
+      <p class="success-order-message">
+        Vui lòng truy cập vào link bên dưới để xem đơn hàng của bạn.
+      </p>
+
+      <a id="tutBtn" class="tut-btn" href="#" target="_blank" rel="noopener noreferrer" style="display:none">
+        Xem đơn hàng
+      </a>
+
+      <button class="success-close-btn" type="button" onclick="closeSuccessPopup()">
+        Đóng
+      </button>
+    </div>
+  </div>
 </div>
 
 <div class="note">
@@ -366,7 +344,7 @@ function showExpired() {
   document.getElementById("qrImg").style.opacity = ".3";
 }
 
-function showPaid(tutUrl) {
+function showPaid(payment) {
   if (lastPaidShown) return;
 
   lastPaidShown = true;
@@ -376,22 +354,37 @@ function showPaid(tutUrl) {
 
   document.getElementById("expiredOverlay").style.display = "none";
 
-  const box = document.getElementById("successBox");
-  box.classList.add("show");
+  document.getElementById("successProduct").textContent =
+    payment.product_name || payment.product || "—";
+
+  document.getElementById("successPackage").textContent =
+    payment.package || "—";
+
+  document.getElementById("successAmount").textContent =
+    formatVND(payment.amount);
+
+  document.getElementById("successPaymentId").textContent =
+    payment.payment_id || paymentId || "—";
 
   const btn = document.getElementById("tutBtn");
 
-  if (tutUrl) {
-    btn.href = tutUrl;
-    btn.style.display = "inline-block";
+  if (payment.tut_url) {
+    btn.href = payment.tut_url;
+    btn.style.display = "flex";
   } else {
+    btn.removeAttribute("href");
     btn.style.display = "none";
   }
 
-  window.scrollTo({
-    top: document.body.scrollHeight,
-    behavior: "smooth"
-  });
+  document.getElementById("successOverlay").classList.add("show");
+  document.body.style.overflow = "hidden";
+}
+
+function closeSuccessPopup(event) {
+  if (event && event.target !== event.currentTarget) return;
+
+  document.getElementById("successOverlay").classList.remove("show");
+  document.body.style.overflow = "";
 }
 
 function renderPayment(payment) {
@@ -440,7 +433,7 @@ function renderPayment(payment) {
   }
 
   if (payment.status === "PAID") {
-    showPaid(payment.tut_url);
+    showPaid(payment);
   } else if (payment.status === "EXPIRED") {
     showExpired();
   } else {
@@ -537,6 +530,10 @@ if (paymentId) {
 }
 
 countdownTimer = setInterval(updateCountdown, 1000);
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeSuccessPopup();
+});
 
 window.addEventListener("beforeunload", () => {
   stopPolling();
