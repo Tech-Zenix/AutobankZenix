@@ -73,16 +73,26 @@ export default async function handler(req, res) {
       const sql = neon(dbUrl);
 
       await sql`
+    const { id, name, category, amount, old_amount, package: pkg, description, image_url, badge, stock_status, is_featured, delivery_link } = req.body || {};
+
+    try {
+      const { neon } = await import('@neondatabase/serverless');
+      const sql = neon(dbUrl);
+
+      // Tự động tạo cột delivery_link nếu chưa có
+      await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS delivery_link TEXT;`;
+
+      await sql`
         INSERT INTO products (
           id, name, category, amount, old_amount, package, description, image_url,
-          rating, stock_status, badge, is_featured, status, updated_at
+          rating, stock_status, badge, is_featured, delivery_link, status, updated_at
         ) VALUES (
           ${id.trim().toLowerCase()}, ${name.trim()}, ${category || 'Ứng dụng'},
           ${parseInt(amount)}, ${old_amount ? parseInt(old_amount) : parseInt(amount) * 2},
           ${pkg || 'Vĩnh viễn'}, ${description || ''},
           ${image_url || 'https://placehold.co/128x128/1c1c24/00f0ff?text=ZENIX'},
           '★ 5.0 (99+)', ${stock_status || 'Còn hàng'}, ${badge || 'TỰ ĐỘNG'},
-          ${Boolean(is_featured)}, 'active', CURRENT_TIMESTAMP
+          ${Boolean(is_featured)}, ${delivery_link || ''}, 'active', CURRENT_TIMESTAMP
         )
         ON CONFLICT (id) DO UPDATE SET
           name = EXCLUDED.name,
@@ -91,9 +101,7 @@ export default async function handler(req, res) {
           old_amount = EXCLUDED.old_amount,
           package = EXCLUDED.package,
           description = EXCLUDED.description,
-          image_url = CASE WHEN EXCLUDED.image_url != '' THEN EXCLUDED.image_url ELSE products.image_url END,
-          stock_status = EXCLUDED.stock_status,
-          badge = EXCLUDED.badge,
+          delivery_link = EXCLUDED.delivery_link,
           updated_at = CURRENT_TIMESTAMP
       `;
       return res.status(200).json({ success: true, message: `Đã lưu sản phẩm [${name}] thành công.` });
