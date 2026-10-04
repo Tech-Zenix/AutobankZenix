@@ -1,6 +1,3 @@
-import { getDb, ADMIN_PASSWORD } from './db.js';
-
-// 13 sản phẩm dự phòng chuẩn của ZENIX LAB nếu DB chưa nạp xong
 const FALLBACK_PRODUCTS = [
   { id: 'locketgold15s', name: 'Locket Gold 15s', category: 'Ứng dụng', amount: 40000, old_amount: 70000, package: 'Vĩnh viễn', description: 'Locket full chức năng, bảo hành đầy đủ trọn đời.', image_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQkwXtsvWEAwWrpOcUI4FHS4ouCrpCZhPHHLe8icVeDQBmfD-a-32VdGjY&s=10', rating: '★ 4.9 (1.1k)', stock_status: 'Còn hàng', badge: 'TỰ ĐỘNG' },
   { id: 'canvapro', name: 'Canva Pro', category: 'Phần mềm', amount: 40000, old_amount: 100000, package: '1 Year', description: 'Canva Pro đầy đủ tính năng thiết kế cao cấp không giới hạn.', image_url: 'https://static.freepnglogo.com/images/all_img/1691829322canva-app-logo-png.png', rating: '★ 4.9 (982)', stock_status: 'Còn hàng', badge: 'TỰ ĐỘNG' },
@@ -14,52 +11,65 @@ const FALLBACK_PRODUCTS = [
   { id: 'tutmanguonblackmmo', name: 'Tut Mã Nguồn - Black MMO', category: 'Tut Trick', amount: 2000000, old_amount: 5000000, package: '1 tut', description: 'Kiếm 150k/1 ngày quy trình chuyên nghiệp khép kín.', image_url: 'https://cdn-icons-png.flaticon.com/512/2721/2721295.png', rating: '★ 5.0 (1)', stock_status: 'Còn hàng', badge: 'TỰ ĐỘNG' },
   { id: 'tooldamefacebook', name: 'Tool Dame Facebook', category: 'Tools', amount: 100000, old_amount: 300000, package: '1 tool', description: 'Tool Dame Facebook full chức năng tự động, cập nhật trọn đời.', image_url: 'https://cdn-icons-png.flaticon.com/512/1006/1006771.png', rating: '★ 5.0 (94)', stock_status: 'Còn hàng', badge: 'TỰ ĐỘNG' },
   { id: 'unlockfacebook282', name: 'Unlock acc Facebook 180 ngày', category: 'Dịch vụ', amount: 150000, old_amount: 300000, package: '1 acc', description: 'Mở khóa acc facebook dưới dạng 282 (đình chỉ, vô hiệu hóa,...).', image_url: 'https://cdn-icons-png.flaticon.com/512/3536/3536394.png', rating: '★ 5.0 (94)', stock_status: 'Còn hàng', badge: 'TỰ ĐỘNG' },
-  { id: 'mokhoagioihanai', 'name': 'Tut ChatGPT', category: 'Tut Trick', amount: 125000, old_amount: 275000, package: '1 tut', description: 'Mở khóa giới hạn AI (upload ảnh, tệp, thời gian sử dụng,...).', image_url: 'https://cdn-icons-png.flaticon.com/512/12222/12222560.png', rating: '★ 5.0 (48)', stock_status: 'Còn hàng', badge: 'TỰ ĐỘNG' }
+  { id: 'mokhoagioihanai', name: 'Tut ChatGPT', category: 'Tut Trick', amount: 125000, old_amount: 275000, package: '1 tut', description: 'Mở khóa giới hạn AI (upload ảnh, tệp, thời gian sử dụng,...).', image_url: 'https://cdn-icons-png.flaticon.com/512/12222/12222560.png', rating: '★ 5.0 (48)', stock_status: 'Còn hàng', badge: 'TỰ ĐỘNG' }
 ];
 
 export default async function handler(req, res) {
+  // 1. Luôn bật CORS đầu tiên để trình duyệt không bao giờ bị lỗi 'Failed to fetch'
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-admin-password');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-  const sql = getDb();
 
-  // GET: Lấy danh sách sản phẩm (Tự động fallback nếu DB chưa nhận biến)
+  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Shin_18122010';
+  const dbUrl = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || process.env.DATABASE_URL_UNPOOLED || process.env.POSTGRES_URL;
+
+  // 2. Xử lý GET danh sách sản phẩm
   if (req.method === 'GET') {
-    if (!sql) {
+    if (!dbUrl) {
       return res.status(200).json({ success: true, source: 'fallback', products: FALLBACK_PRODUCTS });
     }
+
     try {
+      const { neon } = await import('@neondatabase/serverless');
+      const sql = neon(dbUrl);
       const rows = await sql`SELECT * FROM products WHERE status = 'active' ORDER BY is_featured DESC, created_at ASC`;
       if (rows && rows.length > 0) {
         return res.status(200).json({ success: true, source: 'neon_postgres', products: rows });
       }
       return res.status(200).json({ success: true, source: 'fallback', products: FALLBACK_PRODUCTS });
     } catch (err) {
-      console.warn('Lỗi đọc DB, chuyển sang danh sách dự phòng:', err.message);
-      return res.status(200).json({ success: true, source: 'fallback', products: FALLBACK_PRODUCTS, db_error: err.message });
+      console.warn('Lỗi đọc DB, tự động chuyển về danh sách dự phòng:', err.message);
+      return res.status(200).json({ 
+        success: true, 
+        source: 'fallback_safe', 
+        products: FALLBACK_PRODUCTS,
+        db_note: err.message 
+      });
     }
   }
 
-  // Admin xác thực mật khẩu
+  // 3. Xử lý POST (Admin đổi giá hoặc thêm sản phẩm)
   const authPass = req.headers['x-admin-password'] || (req.body && req.body.admin_password);
   if (authPass !== ADMIN_PASSWORD) {
     return res.status(401).json({ success: false, error: 'Mật khẩu bảo mật không hợp lệ.' });
   }
 
-  // POST: Admin thêm mới hoặc sửa giá sản phẩm
   if (req.method === 'POST') {
     const { id, name, category, amount, old_amount, package: pkg, description, image_url, badge, stock_status, is_featured } = req.body || {};
     if (!id || !name || amount === undefined) {
       return res.status(400).json({ success: false, error: 'Thiếu ID, Tên hoặc Giá sản phẩm.' });
     }
 
-    if (!sql) {
-      return res.status(500).json({ success: false, error: 'Chưa kết nối được Neon Database. Hãy Redeploy trên Vercel.' });
+    if (!dbUrl) {
+      return res.status(500).json({ success: false, error: 'Chưa cấu hình biến kết nối NEON_DATABASE_URL trên Vercel.' });
     }
 
     try {
+      const { neon } = await import('@neondatabase/serverless');
+      const sql = neon(dbUrl);
+
       await sql`
         INSERT INTO products (
           id, name, category, amount, old_amount, package, description, image_url,
