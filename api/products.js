@@ -103,4 +103,27 @@ export default async function handler(req, res) {
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
+// 4. Xử lý DELETE: Xóa/Gỡ sản phẩm khỏi danh mục
+  if (req.method === 'DELETE') {
+    const { id } = req.body || req.query || {};
+    if (!id) {
+      return res.status(400).json({ success: false, error: 'Thiếu ID sản phẩm cần xóa.' });
+    }
+
+    if (!dbUrl) {
+      return res.status(500).json({ success: false, error: 'Chưa kết nối được Neon Database.' });
+    }
+
+    try {
+      const { neon } = await import('@neondatabase/serverless');
+      const sql = neon(dbUrl);
+      
+      // Ẩn sản phẩm khỏi danh mục bán hàng
+      await sql`UPDATE products SET status = 'archived', updated_at = CURRENT_TIMESTAMP WHERE id = ${id.trim().toLowerCase()}`;
+      
+      return res.status(200).json({ success: true, message: `Đã xóa sản phẩm [${id}] thành công.` });
+    } catch (err) {
+      return res.status(500).json({ success: false, error: err.message });
+    }
+  }
 }
