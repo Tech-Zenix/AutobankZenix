@@ -1,103 +1,90 @@
+import { getDb } from '../db.js';
+
 export default async function handler(req, res) {
-  // 1. Luôn bật CORS để khách từ website nhận được dữ liệu
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const payment_id = String(req.query.payment_id || '').trim();
+  const payment_id = req.query.payment_id || (req.body && req.body.payment_id);
+
   if (!payment_id) {
-    return res.status(400).json({ success: false, error: 'Vui lòng cung cấp mã đơn hàng.' });
+    return res.status(400).json({ success: false, error: 'Vui lòng cung cấp mã đơn hàng (Payment ID).' });
   }
 
-  const dbUrl = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL;
-  if (!dbUrl) {
-    return res.status(500).json({ success: false, error: 'Chưa cấu hình cơ sở dữ liệu.' });
+  const sql = getDb();
+  if (!sql) {
+    return res.status(500).json({ success: false, error: 'Hệ thống cơ sở dữ liệu đang bảo trì.' });
   }
 
   try {
-    const { neon } = await import('@neondatabase/serverless');
-    const sql = neon(dbUrl);
+    try {
+      await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS delivery_link TEXT;`;
+      await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS delivery_content TEXT;`;
+    } catch (e) {}
 
-    // 2. Tra cứu đơn hàng từ bảng payments kết hợp với thông tin sản phẩm
-    let rows = await sql`
+    const rows = await sql`
       SELECT 
-        p.payment_id,
-        p.product,
-        p.amount,
-        p.status,
-        p.delivery_link AS payment_delivery_link,
-        pr.name AS product_name,
-        pr.package,
-        pr.delivery_link AS product_delivery_link
+        p.payment_id, p.amount, p.status, p.code,
+        COALESCE(p.delivery_content, '') AS delivery_content,
+        COALESCE(p.delivery_link, prod.delivery_link, '') AS delivery_link,
+        p.created_at, p.updated_at,
+        COALESCE(prod.name, p.product) AS product_name,
+        COALESCE(prod.category, 'Ứng dụng') AS category,
+        COALESCE(prod.package, 'Gói mặc định') AS package,
+        prod.image_url
       FROM payments p
-      LEFT JOIN products pr ON p.product = pr.id
-      WHERE p.payment_id = ${payment_id}
-      LIMIT 1
+      LEFT JOIN products prod ON p.product = prod.id
+      WHERE p.payment_id = ${payment_id.trim()}
     `;
 
-    // Nếu không tìm thấy trong payments, tìm tiếp trong bảng orders (nếu có)
-    if (!rows || rows.length === 0) {
-      rows = await sql`
-        SELECT 
-          o.payment_id,
-          o.product_id AS product,
-          o.amount,
-          o.status,
-          o.delivery_link AS payment_delivery_link,
-          o.delivery_content,
-          pr.name AS product_name,
-          pr.package,
-          pr.delivery_link AS product_delivery_link
-        FROM orders o
-        LEFT JOIN products pr ON o.product_id = pr.id
-        WHERE o.payment_id = ${payment_id}
-        LIMIT 1
-      `;
-    }
-
-    if (!rows || rows.length === 0) {
+    if (rows.length === 0) {
       return res.status(404).json({
         success: false,
-        error: 'Không tìm thấy đơn hàng với mã giao dịch này. Vui lòng kiểm tra lại.'
+        error: 'Không tìm thấy thông tin đơn hàng với mã giao dịch này. Vui lòng kiểm tra lại.'
       });
     }
 
     const order = rows[0];
 
-    // 3. Nếu đơn hàng chưa thanh toán
     if (order.status === 'PENDING') {
       return res.status(200).json({
         success: true,
         can_claim: false,
         status: 'PENDING',
-        message: 'Đơn hàng đang chờ thanh toán. Vui lòng hoàn tất chuyển khoản theo mã QR.'
+        message: 'Đơn hàng đang chờ thanh toán. Vui lòng quét mã VietQR và hoàn tất chuyển khoản trước khi nhận sản phẩm.',
+        order: {
+          payment_id: order.payment_id,
+          product_name: order.product_name,
+          amount: order.amount,
+          status: order.status
+        }
       });
     }
 
-    // 4. Đơn hàng ĐÃ THANH TOÁN (PAID hoặc DELIVERED) -> Giao link sản phẩm cho khách
-    const deliveryLink = order.payment_delivery_link || order.product_delivery_link || '';
-    const deliveryContent = order.delivery_content || (deliveryLink ? `Link nhận sản phẩm của bạn: ${deliveryLink}` : 'Đang cập nhật nội dung bàn giao từ hệ thống. Quý khách vui lòng liên hệ Admin ZENIX LAB.');
+    const deliveryLink = order.delivery_link || '';
+    const deliveryContent = order.delivery_content || (deliveryLink ? `Link nhận sản phẩm của bạn: ${deliveryLink}` : 'Đang cập nhật dữ liệu bàn giao từ hệ thống. Quý khách vui lòng chờ 1-3 phút hoặc liên hệ Admin ZENIX LAB.');
 
     return res.status(200).json({
       success: true,
       can_claim: true,
       status: order.status,
+      message: 'Xác thực thanh toán thành công! Sản phẩm của bạn đã sẵn sàng bàn giao.',
       delivery: {
         payment_id: order.payment_id,
-        product_name: order.product_name || order.product,
-        package: order.package || 'Vĩnh viễn',
+        product_name: order.product_name,
+        package: order.package,
         amount: order.amount,
         delivery_content: deliveryContent,
-        delivery_link: deliveryLink
+        delivery_link: deliveryLink,
+        created_at: order.created_at,
+        updated_at: order.updated_at
       }
     });
 
   } catch (err) {
-    console.error('Lỗi tra cứu đơn hàng:', err);
+    console.error('Error claiming order:', err);
     return res.status(500).json({ success: false, error: err.message });
   }
 }
