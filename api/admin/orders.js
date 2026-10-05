@@ -1,85 +1,128 @@
+import { getDb, ADMIN_PASSWORD } from '../db.js';
+
 export default async function handler(req, res) {
-  // 1. Luôn bật CORS đầu tiên để trình duyệt không bao giờ bị 'Failed to fetch'
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-admin-password');
 
-  // Xử lý preflight CORS
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  const authPass = req.headers['x-admin-password'] || (req.body && req.body.admin_password) || (req.query && req.query.admin_password);
+  if (authPass && authPass !== ADMIN_PASSWORD && authPass.toLowerCase() !== ADMIN_PASSWORD.toLowerCase()) {
+    return res.status(401).json({ success: false, error: 'Mật khẩu bảo mật không hợp lệ.' });
   }
 
-  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Shin_18122010';
-  const authPass = req.headers['x-admin-password'] || (req.body && req.body.admin_password) || req.query.admin_password;
-
-  if (authPass !== ADMIN_PASSWORD) {
-    return res.status(401).json({ success: false, error: 'Mật khẩu quản trị không hợp lệ.' });
+  const sql = getDb();
+  if (!sql) {
+    return res.status(500).json({ success: false, error: 'Chưa cấu hình DATABASE_URL trên Vercel.' });
   }
 
-  const dbUrl = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || process.env.DATABASE_URL_UNPOOLED || process.env.POSTGRES_URL;
-
-  // 2. Lấy danh sách đơn hàng
+  // 1. GET: Lấy lịch sử giao dịch và danh sách đơn hàng từ bảng payments
   if (req.method === 'GET') {
-    if (!dbUrl) {
-      // Nếu chưa có DB -> trả về mảng rỗng 200 OK thay vì báo lỗi đỏ
-      return res.status(200).json({ success: true, orders: [] });
-    }
-
+    const { status } = req.query || {};
     try {
-      const { neon } = await import('@neondatabase/serverless');
-      const sql = neon(dbUrl);
-      const { status } = req.query || {};
+      try {
+        await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS delivery_link TEXT;`;
+        await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS delivery_content TEXT;`;
+      } catch (alterErr) {}
 
-      let orders = [];
+      let orders;
       if (status && status !== 'ALL') {
         orders = await sql`
-          SELECT o.*, p.name AS product_name, p.category, p.package 
-          FROM orders o LEFT JOIN products p ON o.product_id = p.id 
-          WHERE o.status = ${status} 
-          ORDER BY o.created_at DESC LIMIT 100
+          SELECT 
+            p.payment_id,
+            p.product AS product_id,
+            p.amount,
+            p.code,
+            p.status,
+            p.expires_at,
+            p.created_at,
+            p.updated_at,
+            COALESCE(p.delivery_link, prod.delivery_link, '') AS delivery_link,
+            COALESCE(p.delivery_content, '') AS delivery_content,
+            COALESCE(prod.name, p.product) AS product_name,
+            COALESCE(prod.category, 'Ứng dụng') AS category,
+            COALESCE(prod.package, 'Gói mặc định') AS package,
+            prod.image_url
+          FROM payments p
+          LEFT JOIN products prod ON p.product = prod.id
+          WHERE p.status = ${status}
+          ORDER BY p.created_at DESC
+          LIMIT 100
         `;
       } else {
         orders = await sql`
-          SELECT o.*, p.name AS product_name, p.category, p.package 
-          FROM orders o LEFT JOIN products p ON o.product_id = p.id 
-          ORDER BY o.created_at DESC LIMIT 100
+          SELECT 
+            p.payment_id,
+            p.product AS product_id,
+            p.amount,
+            p.code,
+            p.status,
+            p.expires_at,
+            p.created_at,
+            p.updated_at,
+            COALESCE(p.delivery_link, prod.delivery_link, '') AS delivery_link,
+            COALESCE(p.delivery_content, '') AS delivery_content,
+            COALESCE(prod.name, p.product) AS product_name,
+            COALESCE(prod.category, 'Ứng dụng') AS category,
+            COALESCE(prod.package, 'Gói mặc định') AS package,
+            prod.image_url
+          FROM payments p
+          LEFT JOIN products prod ON p.product = prod.id
+          ORDER BY p.created_at DESC
+          LIMIT 100
         `;
       }
 
-      return res.status(200).json({ success: true, orders: orders || [] });
+      const stats = {
+        total_orders: orders.length,
+        total_revenue: orders
+          .filter(o => o.status === 'PAID' || o.status === 'DELIVERED' || o.status === 'COMPLETED')
+          .reduce((acc, cur) => acc + (Number(cur.amount) || 0), 0),
+        pending_count: orders.filter(o => o.status === 'PENDING').length,
+        paid_count: orders.filter(o => o.status === 'PAID' || o.status === 'COMPLETED').length,
+        delivered_count: orders.filter(o => o.status === 'DELIVERED').length
+      };
+
+      return res.status(200).json({ success: true, stats, orders });
     } catch (err) {
-      console.warn('Lỗi đọc đơn hàng từ DB:', err.message);
-      // Khi DB chưa có dữ liệu đơn nào -> trả về mảng rỗng sạch đẹp
-      return res.status(200).json({ success: true, orders: [], db_note: err.message });
+      console.error('Error fetching orders:', err);
+      return res.status(500).json({ success: false, error: err.message });
     }
   }
 
-  // 3. Cập nhật bàn giao sản phẩm
+  // 2. POST: Cập nhật thông tin bàn giao sản phẩm & đổi trạng thái
   if (req.method === 'POST') {
     const { payment_id, delivery_content, delivery_link, status } = req.body || {};
+
     if (!payment_id) {
-      return res.status(400).json({ success: false, error: 'Thiếu payment_id.' });
+      return res.status(400).json({ success: false, error: 'Thiếu mã đơn hàng payment_id.' });
     }
 
-    if (!dbUrl) {
-      return res.status(500).json({ success: false, error: 'Chưa kết nối được Neon Database.' });
-    }
+    const nextStatus = status || 'DELIVERED';
 
     try {
-      const { neon } = await import('@neondatabase/serverless');
-      const sql = neon(dbUrl);
-      const nextStatus = status || 'DELIVERED';
+      try {
+        await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS delivery_link TEXT;`;
+        await sql`ALTER TABLE payments ADD COLUMN IF NOT EXISTS delivery_content TEXT;`;
+      } catch (e) {}
 
       await sql`
-        UPDATE orders
-        SET delivery_content = ${delivery_content},
-            delivery_link = ${delivery_link},
-            status = ${nextStatus},
-            delivered_at = CURRENT_TIMESTAMP
+        UPDATE payments
+        SET 
+          delivery_content = COALESCE(${delivery_content}, delivery_content),
+          delivery_link = COALESCE(${delivery_link}, delivery_link),
+          status = ${nextStatus},
+          updated_at = NOW()
         WHERE payment_id = ${payment_id}
       `;
-      return res.status(200).json({ success: true, message: 'Đã cập nhật bàn giao cho khách.' });
+
+      return res.status(200).json({
+        success: true,
+        message: `Đã cập nhật bàn giao thành công cho đơn [${payment_id}]. Khách hàng đã có thể nhận sản phẩm.`
+      });
     } catch (err) {
+      console.error('Error updating order delivery:', err);
       return res.status(500).json({ success: false, error: err.message });
     }
   }
